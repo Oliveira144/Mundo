@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+"""
 Football Studio Card Analyzer
-
+"""
 Profissional - implementa a metodologia ensinada: mapeamento de valores, classificação
 
 (alta/média/baixa), detecção de padrões, previsão heurística, sugestão de aposta,
