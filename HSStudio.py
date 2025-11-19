@@ -1,11 +1,11 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd 
-import numpy as np from datetime 
+import numpy as np from datetime
 import datetime
 
 Football Studio Card Analyzer
 
-Profissional — implementa a metodologia ensinada: mapeamento de valores, classificação
+Profissional - implementa a metodologia ensinada: mapeamento de valores, classificação
 
 (alta/média/baixa), detecção de padrões, previsão heurística, sugestão de aposta,
 
@@ -15,7 +15,7 @@ histórico com inserção manual via botões, exportação e visualização em l
 
 st.set_page_config(page_title="Football Studio Analyzer - Profissional", layout="wide", initial_sidebar_state="expanded")
 
-st.title("Football Studio Analyzer — Profissional") st.markdown("Aplicativo em Python (Streamlit) que implementa integralmente a metodologia de análise por valor de cartas, sem alterações nas regras fornecidas.")
+st.title("Football Studio Analyzer - Profissional") st.markdown("Aplicativo em Python (Streamlit) que implementa integralmente a metodologia de análise por valor de cartas, sem alterações nas regras fornecidas.")
 
 ----------------------------- Constantes -----------------------------
 
@@ -291,9 +291,9 @@ Mostrar interpretação textual dos sinais
 
 st.markdown('---') st.subheader('Interpretação dos sinais (por valor de carta)') st.markdown('''
 
-Cartas A, K, Q, J: consideradas ALTAS. Vitória com alta tende a repetir — aposta na cor vencedora com confiança.
+Cartas A, K, Q, J: consideradas ALTAS. Vitória com alta tende a repetir - aposta na cor vencedora com confiança.
 
-Cartas 10, 9, 8: consideradas MÉDIAS. Zona de transição — observar sinais antes de apostar.
+Cartas 10, 9, 8: consideradas MÉDIAS. Zona de transição - observar sinais antes de apostar.
 
 Cartas 7–2: consideradas BAIXAS. Alto risco de quebra; geralmente sinalizam instabilidade. ''')
 
