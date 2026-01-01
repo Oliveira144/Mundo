@@ -1,151 +1,140 @@
 import streamlit as st
 
-# ==============================
-# CONFIG
-# ==============================
 st.set_page_config(
-    page_title="Dragon Tiger • Leitura Profissional",
+    page_title="Dragon Tiger • Leitura Profissional REAL",
     layout="wide"
 )
 
-# ==============================
+# =============================
 # ESTADO
-# ==============================
-if "historico" not in st.session_state:
-    st.session_state.historico = []
+# =============================
+if "hist" not in st.session_state:
+    st.session_state.hist = []
 
-# ==============================
-# FUNÇÕES
-# ==============================
-def emoji(r):
-    if r == "D":
-        return "🐉"
-    if r == "T":
-        return "🐯"
-    return "🤝"
+if "cooldown" not in st.session_state:
+    st.session_state.cooldown = 0
 
-def sequencia_atual(hist):
+# =============================
+# FUNÇÕES BÁSICAS
+# =============================
+def em(x):
+    return "🐉" if x == "D" else "🐯" if x == "T" else "🤝"
+
+def sequencia(hist):
     if len(hist) < 2:
         return 1
-    ultimo = hist[-1]
-    seq = 1
-    for i in range(len(hist) - 2, -1, -1):
-        if hist[i] == ultimo:
-            seq += 1
+    u = hist[-1]
+    s = 1
+    for i in range(len(hist)-2, -1, -1):
+        if hist[i] == u:
+            s += 1
         else:
             break
-    return seq
+    return s
 
-def detectar_alternancia(hist):
+def alternancia(hist):
     if len(hist) < 4:
         return False
-    return hist[-1] != hist[-2] and hist[-2] != hist[-3] and hist[-3] != hist[-4]
+    return hist[-1] != hist[-2] != hist[-3] != hist[-4]
 
-def analisar_jogo(hist):
-    if len(hist) < 3:
-        return {
-            "padrao": "Poucos dados",
-            "sugestao": "AGUARDE",
-            "explicacao": "Ainda não há histórico suficiente."
-        }
+def empate_recente(hist, n=2):
+    return "E" in hist[-n:]
 
+# =============================
+# CÉREBRO REAL (SEM FORÇAR)
+# =============================
+def analisar(hist):
+    # REGRA 0 — SEM DADOS
+    if len(hist) < 6:
+        return ("Poucos dados", "AGUARDE", "Histórico insuficiente")
+
+    # REGRA 1 — COOLDOWN
+    if st.session_state.cooldown > 0:
+        st.session_state.cooldown -= 1
+        return ("Cooldown ativo", "AGUARDE", "Sistema travado por segurança")
+
+    # REGRA 2 — EMPATE BLOQUEIA
+    if empate_recente(hist, 2):
+        st.session_state.cooldown = 1
+        return ("Empate recente", "AGUARDE", "Empate quebra leitura")
+
+    # REGRA 3 — ALTERNÂNCIA BLOQUEIA
+    if alternancia(hist):
+        return ("Alternância", "AGUARDE", "Jogo em zigue-zague")
+
+    # REGRA 4 — SEQUÊNCIA
+    seq = sequencia(hist)
     ultimo = hist[-1]
-    seq = sequencia_atual(hist)
 
-    # EMPATE
-    if ultimo == "E":
-        return {
-            "padrao": "Empate",
-            "sugestao": "AGUARDE",
-            "explicacao": "Empate é usado para confundir. Aguarde 1–2 rodadas."
-        }
+    # SEQUÊNCIA LONGA = PROIBIDO
+    if seq >= 4:
+        st.session_state.cooldown = 1
+        return ("Sequência longa", "AGUARDE", "Risco alto de quebra")
 
-    # ALTERNÂNCIA
-    if detectar_alternancia(hist):
-        return {
-            "padrao": "Alternância",
-            "sugestao": "AGUARDE",
-            "explicacao": "Alternância constante não gera leitura confiável."
-        }
-
-    # CONTINUIDADE CURTA
+    # ÚNICA CONDIÇÃO DE ENTRADA
     if seq == 2 or seq == 3:
         lado = "🐉 Dragão" if ultimo == "D" else "🐯 Tigre"
-        return {
-            "padrao": "Continuidade curta",
-            "sugestao": lado,
-            "explicacao": "Sequência curta tende a continuar."
-        }
+        return (
+            "Continuidade curta LIMPA",
+            lado,
+            "Entrada permitida (padrão válido)"
+        )
 
-    # QUEBRA
-    if seq >= 4:
-        lado = "🐯 Tigre" if ultimo == "D" else "🐉 Dragão"
-        return {
-            "padrao": "Quebra provável",
-            "sugestao": lado,
-            "explicacao": "Sequência longa. Cassino costuma quebrar."
-        }
+    # FALLBACK
+    return ("Caos", "AGUARDE", "Sem vantagem estatística")
 
-    return {
-        "padrao": "Caos",
-        "sugestao": "AGUARDE",
-        "explicacao": "Sem padrão confiável no momento."
-    }
-
-# ==============================
+# =============================
 # INTERFACE
-# ==============================
-st.title("🐉🐯 Dragon Tiger — Leitura Profissional")
+# =============================
+st.title("🐉🐯 Dragon Tiger — Leitura Profissional (SEM FORÇAR)")
 
 c1, c2 = st.columns([1, 2])
 
 with c1:
     st.subheader("🎯 Inserir Resultado")
-
     if st.button("🐉 Dragão"):
-        st.session_state.historico.append("D")
-
+        st.session_state.hist.append("D")
     if st.button("🐯 Tigre"):
-        st.session_state.historico.append("T")
-
+        st.session_state.hist.append("T")
     if st.button("🤝 Empate"):
-        st.session_state.historico.append("E")
-
-    if st.button("🔄 Limpar Histórico"):
-        st.session_state.historico = []
+        st.session_state.hist.append("E")
+    if st.button("🔄 Limpar"):
+        st.session_state.hist = []
+        st.session_state.cooldown = 0
 
 with c2:
     st.subheader("📜 Histórico")
-    st.write(" ".join(emoji(x) for x in st.session_state.historico[-60:]))
+    st.write(" ".join(em(x) for x in st.session_state.hist[-60:]))
 
-# ==============================
+# =============================
 # ANÁLISE
-# ==============================
+# =============================
 st.divider()
-st.subheader("🧠 Análise Atual")
+st.subheader("🧠 Diagnóstico REAL")
 
-resultado = analisar_jogo(st.session_state.historico)
+padrao, sugestao, motivo = analisar(st.session_state.hist)
 
-st.info(f"📌 PADRÃO: **{resultado['padrao']}**")
-st.write(resultado["explicacao"])
+st.info(f"📌 Padrão: **{padrao}**")
+st.write(f"🧾 Motivo: {motivo}")
 
-if resultado["sugestao"] == "AGUARDE":
+if sugestao == "AGUARDE":
     st.error("🚫 SUGESTÃO: NÃO ENTRAR")
 else:
-    st.success(f"🎯 SUGESTÃO DE APOSTA: **{resultado['sugestao']}**")
+    st.success(f"🎯 SUGESTÃO: **{sugestao}**")
 
-# ==============================
-# EDUCATIVO
-# ==============================
+# =============================
+# TRANSPARÊNCIA
+# =============================
 st.divider()
-st.subheader("📘 Regras do Sistema")
+st.subheader("⚠️ Regras do Sistema")
 
 st.markdown("""
-- ✅ Entrar apenas em **continuidade curta**
-- ⚠️ Quebra após **4 ou mais iguais**
-- 🚫 Empate bloqueia leitura
-- ❌ Alternância não é padrão
-- 🛑 Sem padrão = proteger banca
+- **AGUARDE é o padrão**
+- Só entra em **continuidade curta LIMPA**
+- Empate trava o sistema
+- Alternância é proibida
+- Sequência longa é proibida
+- Cooldown impede overtrade
 """)
 
-st.caption("Este sistema não promete ganhos. Ele evita erros e protege a banca.")
+st.caption("Sistema conservador. Não força entrada. Protege banca.")
