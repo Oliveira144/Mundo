@@ -1,67 +1,105 @@
 import streamlit as st
 
-st.set_page_config(page_title="Dragon Tiger – Leitura Inteligente", layout="wide")
+# ==============================
+# CONFIG
+# ==============================
+st.set_page_config(
+    page_title="Dragon Tiger • Leitura Profissional",
+    layout="wide"
+)
 
-# =============================
+# ==============================
 # ESTADO
-# =============================
+# ==============================
 if "historico" not in st.session_state:
     st.session_state.historico = []
 
-# =============================
+# ==============================
 # FUNÇÕES
-# =============================
-def analisar_padroes(hist):
-    if len(hist) < 3:
-        return "SEM LEITURA", "AGUARDE", 0.0
+# ==============================
+def emoji(r):
+    if r == "D":
+        return "🐉"
+    if r == "T":
+        return "🐯"
+    return "🤝"
 
-    ultimos = hist[-6:]
+def sequencia_atual(hist):
+    if len(hist) < 2:
+        return 1
     ultimo = hist[-1]
-
-    dragao = ultimos.count("D")
-    tigre = ultimos.count("T")
-    empate = ultimos.count("E")
-
-    # Detecta sequência
-    sequencia = 1
-    for i in range(len(hist)-2, -1, -1):
+    seq = 1
+    for i in range(len(hist) - 2, -1, -1):
         if hist[i] == ultimo:
-            sequencia += 1
+            seq += 1
         else:
             break
+    return seq
 
-    # Regras reais
-    confianca = 0.0
+def detectar_alternancia(hist):
+    if len(hist) < 4:
+        return False
+    return hist[-1] != hist[-2] and hist[-2] != hist[-3] and hist[-3] != hist[-4]
 
-    # Empate trava leitura
+def analisar_jogo(hist):
+    if len(hist) < 3:
+        return {
+            "padrao": "Poucos dados",
+            "sugestao": "AGUARDE",
+            "explicacao": "Ainda não há histórico suficiente."
+        }
+
+    ultimo = hist[-1]
+    seq = sequencia_atual(hist)
+
+    # EMPATE
     if ultimo == "E":
-        return "EMPATE RECENTE", "AGUARDE", 0.0
+        return {
+            "padrao": "Empate",
+            "sugestao": "AGUARDE",
+            "explicacao": "Empate é usado para confundir. Aguarde 1–2 rodadas."
+        }
 
-    # Sequência curta (1 a 3)
-    if sequencia <= 3:
-        confianca = 0.55
-        return "CONTINUAÇÃO CURTA", ultimo, confianca
+    # ALTERNÂNCIA
+    if detectar_alternancia(hist):
+        return {
+            "padrao": "Alternância",
+            "sugestao": "AGUARDE",
+            "explicacao": "Alternância constante não gera leitura confiável."
+        }
 
-    # Sequência longa (4+)
-    if sequencia >= 4:
-        confianca = 0.65
-        sugestao = "T" if ultimo == "D" else "D"
-        return "POSSÍVEL QUEBRA", sugestao, confianca
+    # CONTINUIDADE CURTA
+    if seq == 2 or seq == 3:
+        lado = "🐉 Dragão" if ultimo == "D" else "🐯 Tigre"
+        return {
+            "padrao": "Continuidade curta",
+            "sugestao": lado,
+            "explicacao": "Sequência curta tende a continuar."
+        }
 
-    return "SEM PADRÃO CLARO", "AGUARDE", 0.0
+    # QUEBRA
+    if seq >= 4:
+        lado = "🐯 Tigre" if ultimo == "D" else "🐉 Dragão"
+        return {
+            "padrao": "Quebra provável",
+            "sugestao": lado,
+            "explicacao": "Sequência longa. Cassino costuma quebrar."
+        }
 
+    return {
+        "padrao": "Caos",
+        "sugestao": "AGUARDE",
+        "explicacao": "Sem padrão confiável no momento."
+    }
 
-def emoji(res):
-    return "🐉" if res == "D" else "🐯" if res == "T" else "🤝"
-
-# =============================
+# ==============================
 # INTERFACE
-# =============================
-st.title("🐉🐯 Dragon Tiger – Leitura & Sugestão Inteligente")
+# ==============================
+st.title("🐉🐯 Dragon Tiger — Leitura Profissional")
 
-col1, col2 = st.columns([1, 2])
+c1, c2 = st.columns([1, 2])
 
-with col1:
+with c1:
     st.subheader("🎯 Inserir Resultado")
 
     if st.button("🐉 Dragão"):
@@ -76,49 +114,38 @@ with col1:
     if st.button("🔄 Limpar Histórico"):
         st.session_state.historico = []
 
-with col2:
-    st.subheader("📜 Histórico (mais antigo → recente)")
-    hist_emojis = [emoji(r) for r in st.session_state.historico]
-    st.write(" ".join(hist_emojis[-60:]))
+with c2:
+    st.subheader("📜 Histórico")
+    st.write(" ".join(emoji(x) for x in st.session_state.historico[-60:]))
 
-# =============================
+# ==============================
 # ANÁLISE
-# =============================
+# ==============================
 st.divider()
-st.subheader("🧠 Leitura Atual")
+st.subheader("🧠 Análise Atual")
 
-padrao, sugestao, confianca = analisar_padroes(st.session_state.historico)
+resultado = analisar_jogo(st.session_state.historico)
 
-if sugestao == "AGUARDE":
-    st.warning(f"⚠️ {padrao} — NÃO ENTRAR")
+st.info(f"📌 PADRÃO: **{resultado['padrao']}**")
+st.write(resultado["explicacao"])
+
+if resultado["sugestao"] == "AGUARDE":
+    st.error("🚫 SUGESTÃO: NÃO ENTRAR")
 else:
-    cor = "🐉 DRAGÃO" if sugestao == "D" else "🐯 TIGRE"
-    st.success(f"📌 PADRÃO: {padrao}")
-    st.success(f"🎯 SUGESTÃO: {cor}")
-    st.info(f"📊 CONFIANÇA: {int(confianca*100)}%")
+    st.success(f"🎯 SUGESTÃO DE APOSTA: **{resultado['sugestao']}**")
 
-# =============================
-# ALERTAS
-# =============================
+# ==============================
+# EDUCATIVO
+# ==============================
 st.divider()
-st.subheader("🚨 Alertas Importantes")
+st.subheader("📘 Regras do Sistema")
 
-if len(st.session_state.historico) >= 1 and st.session_state.historico[-1] == "E":
-    st.error("Empate recente → Aguarde 1 a 2 rodadas")
+st.markdown("""
+- ✅ Entrar apenas em **continuidade curta**
+- ⚠️ Quebra após **4 ou mais iguais**
+- 🚫 Empate bloqueia leitura
+- ❌ Alternância não é padrão
+- 🛑 Sem padrão = proteger banca
+""")
 
-if len(st.session_state.historico) >= 4:
-    ult = st.session_state.historico[-1]
-    seq = 1
-    for i in range(len(st.session_state.historico)-2, -1, -1):
-        if st.session_state.historico[i] == ult:
-            seq += 1
-        else:
-            break
-    if seq >= 4:
-        st.error("Sequência longa detectada → risco alto / possível quebra")
-
-# =============================
-# RODAPÉ
-# =============================
-st.divider()
-st.caption("⚠️ Este app NÃO garante ganhos. Ele apenas lê comportamento e fluxo.")
+st.caption("Este sistema não promete ganhos. Ele evita erros e protege a banca.")
